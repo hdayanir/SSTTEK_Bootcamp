@@ -20,13 +20,55 @@ namespace WebApplication1.Controllers
         {
             _logger = logger;
         }
+        
+
+        public class OtoparkArac
+        {
+            public int ArabaId { get; set; }
+            public int ArabaSinif { get; set; }
+            public string Renk { get; set; }
+            public string Plaka { get; set; }
+            public int ModelYili { get; set; }
+            public string ModelAdi { get; set; }
+            public int BeygirGucu { get; set; }
+            public bool OtomatikPilot { get; set; }
+            public decimal? ArabaFiyat { get; set; }
+            public DateTime GirisZamani { get; set; }
+            public DateTime? CikisZamani { get; set; }
+            public int? BagajHacmi { get; set; }
+            public bool YedekLastik { get; set; }
+            public decimal? OtoparkUcreti { get; set; }
+
+        }
+
+        public class ApplicationDbContext : System.Data.Entity.DbContext
+        {
+            public System.Data.Entity.DbSet<OtoparkArac> OtoparkAracLists { get; set; }
+        } 
+        public class Arac
+        {
+            public string Renk { get; set; }
+            public string Plaka { get; set; }
+            public int ModelYili { get; set; }
+            public string ModelAdi { get; set; }
+        }
+        public class BirinciSinifArac : Arac
+        {
+            public bool OtomatikPilot { get; set; }
+            public decimal Fiyat { get; set; }
+        }
+        public class IkinciSinifArac : Arac
+        {
+            public decimal BagajHacmi { get; set; }
+            public bool YedekLastik { get; set; }
+        }
         [HttpGet("GetEmailLists")]
-        public IActionResult GetEmailLists()
+        public IActionResult GetEmailListsa()
         {
             using (var context = new ApplicationDbContext())
             {
-                var EmailLists = context.EmailLists
-                    .GroupBy(p => p.ToAdress)
+                var EmailLists = context.OtoparkAracLists
+                    .GroupBy(p => p.ArabaId)
                     .Select(g => g.FirstOrDefault())
                     .ToList();
                 foreach (var emailLists in EmailLists)
@@ -35,102 +77,6 @@ namespace WebApplication1.Controllers
                 }
                 return Ok("Herhangi bir veri yoktur");
             }
-        }
-        [HttpGet("GetEmailListDetails")]
-        public IActionResult Get()
-        {
-            using (var context = new ApplicationDbContext())
-            {
-
-                var EmailListDetails = context.EmailListDetails
-                    .GroupBy(p => p.ToAdress)
-                    .Select(g => g.FirstOrDefault())
-                    .ToList();
-                foreach (var emailListDetails in EmailListDetails)
-                {
-                    return Ok(EmailListDetails);
-                }
-                return Ok("Herhangi bir veri yoktur");
-            }
-        }
-        [HttpPost("PostEmail")]
-        public IActionResult Set(string ToAdress, string Subject, string Body)
-        {
-            if (!IsValidEmail(ToAdress))
-            {
-                return StatusCode(200, "Hatalý e mail");
-            }
-            using (var context = new ApplicationDbContext())
-            {
-                var newEmail = new EmailList
-                {
-                    ToAdress = ToAdress
-                };
-                context.EmailLists.Add(newEmail);
-                context.SaveChanges();
-
-                var newEmailDetail = new EmailListDetail
-                {
-                    FromAdress = FromAdress,
-                    ToAdress = ToAdress,
-                    Subject = Subject,
-                    Body = Body,
-                    SentTime = DateTime.Now
-                };
-                context.EmailListDetails.Add(newEmailDetail);
-                context.SaveChanges();
-            }
-            return Ok("Veriler baþarýyla kaydedildi.");
-        }
-        [HttpDelete("DeleteEmail")]
-        public async Task<IActionResult> Delete(string ToAdress)
-        {
-            if (!IsValidEmail(ToAdress))
-            {
-                return StatusCode(200, "Hatalý e mail");
-            }
-            using (var context = new ApplicationDbContext())
-            {
-                var email = await context.EmailLists.FirstOrDefaultAsync(e => e.ToAdress == ToAdress);
-                var emailDetail = await context.EmailListDetails.FirstOrDefaultAsync(e => e.ToAdress == ToAdress);
-
-                if (email == null && emailDetail == null)
-                {
-                    return Ok(ToAdress + " mail adresi listede bulunamadý");
-                }
-                if (email != null)
-                {
-                    context.EmailLists.Remove(email);
-                    context.SaveChanges();
-                }
-                if (emailDetail != null)
-                {
-                    context.EmailListDetails.Remove(emailDetail);
-                    context.SaveChanges();
-                }
-                return Ok(ToAdress + " mail adresi listeden baþarýyla silindi.");
-            }
-        }
-
-        public class EmailList
-        {
-            public int EmailListId { get; set; }
-            public string ToAdress { get; set; }
-        }
-        public class EmailListDetail
-        {
-            public int EmailListDetailId { get; set; }
-            public string FromAdress { get; set; }
-            public string ToAdress { get; set; }
-            public string Subject { get; set; }
-            public string Body { get; set; }
-            public DateTime SentTime { get; set; }
-        }
-        public class ApplicationDbContext : DbContext
-        {
-            public DbSet<EmailList> EmailLists { get; set; }
-            public DbSet<EmailListDetail> EmailListDetails { get; set; }
-
         }
         public static bool IsValidEmail(string email)
         {
